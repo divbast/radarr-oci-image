@@ -98,9 +98,9 @@ RUN sdk=$(cd / && dotnet --version); /tmp/global-json.sh global.json "${sdk}"
 # against any package an already-pinned commit restores would fail the
 # build, and hold back every update, the runtime's patches included, until
 # upstream moves. Those four stay warnings here, printed in the build log:
-# ci's scan already blocks a vulnerable package the image does not already
-# ship. %3B is msbuild's escaped semicolon, which keeps the four in one
-# property.
+# ci's scan already blocks a package with an advisory the image does not
+# already ship. %3B is msbuild's escaped semicolon, which keeps the four in
+# one property.
 RUN case "${TARGETARCH}" in \
         amd64) rid=linux-x64 ;; \
         arm64) rid=linux-arm64 ;; \
@@ -189,7 +189,7 @@ COPY --from=probe /out/divbast-radarr /usr/local/bin/divbast-radarr
 # The data directory, empty and uid 65532's, and not a VOLUME: a new named
 # volume mounted here takes its owner from it, so Radarr can write to it.
 # Without a mount, the read-only root refuses every write, and Radarr
-# exits, naming /config.
+# exits at once, naming /config.
 COPY --from=backend --chown=65532:65532 /out/config /config
 # Radarr takes ASP.NET Core's content root from its working directory, and
 # sets none of its own. It loads no appsettings.json and watches no file,
@@ -236,8 +236,8 @@ USER 65532:65532
 # there and reaps its child processes, so it needs no init; a restart from
 # the UI happens inside the process. The apphost finds the runtime through
 # the base's DOTNET_ROOT. -exitimmediately is upstream's own flag, read in
-# one place: a startup failure upstream calls non-recoverable, such as an
-# unwritable data directory, then exits at once, where without it Radarr
+# one place: a startup failure upstream calls non-recoverable, such as a
+# PID file it cannot write, then exits at once, where without it Radarr
 # would wait an hour for a key that no one can press in a container, and
 # the container would sit there looking alive.
 ENTRYPOINT ["/app/bin/Radarr", "-nobrowser", "-exitimmediately", "-data=/config"]
