@@ -1,9 +1,9 @@
-# SPDX-License-Identifier: BSD-2-Clause
+# SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Aryan Ameri <github@aryan.ameri.coffee>
 
 # Renovate for this repository, through divbast/ci's renovate.yml. Renovate
 # merges its own pull requests only while the repository variable
-# OCI_IMAGE_TEMPLATE_AUTOMERGE is `enabled`, compared without regard to
+# RADARR_AUTOMERGE is `enabled`, compared without regard to
 # case. Unset, empty or anything else turns automerge off from the next run.
 
 name: renovate
@@ -41,9 +41,9 @@ permissions: {}
 jobs:
   renovate:
     name: renovate
-    uses: divbast/ci/.github/workflows/renovate.yml@61df94f58389b91ce75926e1b60355936b9b252c # v4.20.0
+    uses: divbast/ci/.github/workflows/renovate.yml@d4d169cdaf3debc8e1f3adf17358981eff3b71cc # v4.26.0
     with:
-      automerge: ${{ vars.OCI_IMAGE_TEMPLATE_AUTOMERGE == 'enabled' }}
+      automerge: ${{ vars.RADARR_AUTOMERGE == 'enabled' }}
       # The DHI login, without which dhi.io answers nothing: Renovate looks
       # up the pins of Docker Hardened Images with it. An app whose
       # divbast/infra entry has no dhi = true reads both empty, and

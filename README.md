@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: BSD-2-Clause -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- SPDX-FileCopyrightText: 2026 Aryan Ameri <github@aryan.ameri.coffee> -->
 
 # oci-image-template
@@ -459,6 +459,6 @@ This project was developed with significant LLM involvement. Each git commit con
 
 Copyright 2026 Aryan Ameri.
 
-[BSD-2-Clause](LICENSES/BSD-2-Clause.txt)
+[GPL-3.0-only](LICENSES/GPL-3.0-only.txt)
 
 This project is [REUSE](https://reuse.software/) compliant.

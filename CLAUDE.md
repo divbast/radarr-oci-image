@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: BSD-2-Clause -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- SPDX-FileCopyrightText: 2026 Aryan Ameri <github@aryan.ameri.coffee> -->
 
 # oci-image-template
@@ -419,7 +419,7 @@ target framework follows its SDK, and no upstream waits on it.
   GitHub not answering fails the scan rather than waving it through. A
   local `just scan` never asks GitHub, so a refusal there is advisory,
   with a warning that only CI can tell what it means
-- REUSE-compliant SPDX headers on every file; licence is **BSD-2-Clause**.
+- REUSE-compliant SPDX headers on every file; licence is **GPL-3.0-only**.
   The image's licences label names only that, because the image ships
   nothing else of its own; an app that ships an upstream's files adds the
   upstream's licence to the label, and leaves which file carries which
