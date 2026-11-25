@@ -17,7 +17,8 @@ const (
 	// gets exactly this, so no check passes on more room than the
 	// contract grants.
 	tmpfsSize = "16m"
-	// appPort serves the page and /healthz alike: the app has one port.
+	// appPort is the one port Radarr listens on: the UI, the API and
+	// /ping, its health route.
 	appPort = 8080
 )
 
@@ -25,9 +26,9 @@ const (
 // contract's Exec run.
 const binary = "/usr/local/bin/divbast-radarr"
 
-// serverArgv is PID 1's argv: the image's ENTRYPOINT, the apphost alone,
-// since nothing runs before the app.
-var serverArgv = []string{"/app/bin/Template"}
+// serverArgv is PID 1's argv: the image's ENTRYPOINT, since nothing runs
+// before Radarr.
+var serverArgv = []string{"/app/bin/Radarr", "-nobrowser", "-exitimmediately", "-data=/config"}
 
 // healthCmd is the shipped health probe, as the image's HEALTHCHECK runs
 // it and a Podman user passes it with --health-cmd.
@@ -45,7 +46,7 @@ func TestContract(t *testing.T) {
 		Image:      image,
 		AppPort:    appPort,
 		HealthPort: 0,
-		HealthPath: "/healthz",
+		HealthPath: "/ping",
 		TmpfsSize:  tmpfsSize,
 		PID1:       serverArgv,
 		Exec:       []string{binary, "version"},
@@ -54,7 +55,7 @@ func TestContract(t *testing.T) {
 			Test:        slices.Concat([]string{"CMD"}, healthCmd),
 			Interval:    30 * time.Second,
 			Timeout:     10 * time.Second,
-			StartPeriod: 60 * time.Second,
+			StartPeriod: 300 * time.Second,
 			Retries:     3,
 		},
 	})
