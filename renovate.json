@@ -1,4 +1,27 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>divbast/renovate-config", "github>divbast/renovate-config:app"]
+  "extends": ["github>divbast/renovate-config", "github>divbast/renovate-config:app"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "ARG RADARR_VERSION and the ARG RADARR_COMMIT beneath it, captured together so one PR moves both. The dockerfile manager only reads an ARG that a FROM expands, and these feed the fetch stage's checkout. Radarr tags every develop build as well as every stable release, and publishes the develop ones as GitHub pre-releases, so only a release GitHub calls stable is offered. github-releases lists releases alone, so a tag with no release is never offered either, and a failed lookup offers nothing, where github-tags offers every tag it cannot find a pre-release for. Its digest is the commit the release's tag names, which the fetch stage checks out and asserts the tag still names. github-releases looks that commit up by the tag's own name, v7.0.3.10918. So currentValueTemplate adds the v to the version Renovate compares, and autoReplaceStringTemplate takes it off again when it writes the ARG back. Stripping the v with extractVersion instead would leave Renovate looking for a tag named 7.0.3.10918, which does not exist, and it would drop the update. The versioning compares all four numbers, which semver cannot read. The two ARGs must stay adjacent and in this order.",
+      "managerFilePatterns": ["/^Containerfile$/"],
+      "matchStrings": ["ARG RADARR_VERSION=(?<currentValue>\\S+)\\nARG RADARR_COMMIT=(?<currentDigest>[0-9a-f]{40})"],
+      "depNameTemplate": "Radarr/Radarr",
+      "datasourceTemplate": "github-releases",
+      "currentValueTemplate": "v{{{currentValue}}}",
+      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$",
+      "autoReplaceStringTemplate": "ARG RADARR_VERSION={{{replace '^v' '' newValue}}}\nARG RADARR_COMMIT={{{newDigest}}}"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Radarr's stable releases alone, merged once every check passes, like every other update here. ignoreUnstable keeps every release GitHub marks a pre-release, which is each develop build, from being offered, whatever the current pin is. Majors are no exception to the merge: the acceptance suite, not the size of the bump, is what holds a release back.",
+      "matchDepNames": ["Radarr/Radarr"],
+      "labels": ["radarr"],
+      "commitMessagePrefix": "radarr:",
+      "ignoreUnstable": true,
+      "automerge": true
+    }
+  ]
 }
