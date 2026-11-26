@@ -151,8 +151,7 @@ breaking change.
   8080 can use Radarr, `/initialize.json` hands out the API key, and a
   backup downloads without a session, which is how the suite downloads
   one. The image sets nothing for it, and the README says to keep the port
-  on loopback until the prompt is done. There is no first-password
-  variable
+  on loopback until the prompt is done
 - **The updater is off.** `/app/package_info` says `UpdateMethod=Docker`
   and `Branch=master`, and upstream reads it only from beside a directory
   named `bin`, which is why the binaries are in `/app/bin`.

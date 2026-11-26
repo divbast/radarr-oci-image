@@ -140,10 +140,17 @@ it opens it, and the older Radarr may not open it again: keep the old
 `/config`, or a backup from the old install's System, Backup, until you
 are sure.
 
+**Move only from a Radarr at this image's version or older.** A database
+that a develop or nightly build of Radarr has migrated can hold changes
+this release does not know, and Radarr does not check for them before it
+starts.
+
 Copy the old `/config` into the new volume or directory, then give it all
 to 65532 as above, with `chown -R`: the files another image wrote are
 usually its PUID's, such as 1000. Or start fresh, set up the login, and
-restore the backup under System, Backup.
+restore the backup under System, Backup. For a restore, size `/tmp` from
+the old `radarr.db` first, as [`/tmp`](#tmp) says: the upload and the
+database it holds pass through `/tmp`.
 
 - **After a restore, restart the container.** Radarr applies a restore by
   restarting inside the same process, and it then serves again, but that
@@ -164,10 +171,11 @@ restore the backup under System, Backup.
 
 ### `/tmp`
 
-`/tmp` is the contract's one tmpfs, and Radarr uses it to stage a backup,
-copying the database there before it zips the backup into `/config`, and
-to receive a backup you restore. So `/tmp` must hold at least twice
-`radarr.db`, or the backup, the weekly scheduled one included, fails.
+`/tmp` is the contract's one tmpfs, and Radarr uses it twice over. A
+backup, the weekly scheduled one included, copies the database there
+before it zips the backup into `/config`. A restore receives the upload
+there, and unpacks the database there. So `/tmp` must hold at least twice
+`radarr.db`, or a backup or a restore fails.
 
 64 MiB, the size above and the one the acceptance suite runs under, is far
 more than a new install needs: a backup of a database holding 50 tags and
@@ -211,8 +219,7 @@ and open the UI there first. While the method is `None`, Radarr opens a
 first-run prompt that sets the method, a username and a password, and
 creates that user. Then publish the port, or put Radarr behind your
 proxy. A user is made only there, or later under Settings, General, both
-of which save through `PUT /api/v3/config/host`: the environment has no
-username or password to give.
+of which save through `PUT /api/v3/config/host`.
 
 **Do not set `RADARR__AUTH__METHOD=Forms` on a fresh install.** With
 `Forms` in force and no user, there is nobody to log in as, and the

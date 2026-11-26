@@ -197,12 +197,12 @@ func finished(ctx context.Context, s *harness.Serving, id int) (command, error) 
 // /api/v3/system/backup/restore/upload, which Radarr stages in /tmp and
 // applies once it restarts. Restarted as the UI then restarts it, in the
 // one process, Radarr must serve again, having put the restored database
-// in place. Nothing in Radarr clears SQLite's connection pool, which only
-// the process ending closes, so the new host can go on reading the
-// database it replaced, through a connection the old one left open. A
-// restart of the container, which the README tells users to make after a
-// restore, opens the restored file whatever the pool held, and the tag
-// must be back then.
+// in place. Radarr clears SQLite's connection pool after a backup, and
+// once its last host has stopped, but never between the hosts of an
+// in-process restart, so the new host can go on reading the database it
+// replaced, through a connection the old one left open. A restart of the
+// container, which the README tells users to make after a restore, opens
+// the restored file whatever the pool held, and the tag must be back then.
 func TestRestoresBackup(t *testing.T) {
 	t.Parallel()
 	e, image := underTest(t)
