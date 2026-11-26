@@ -15,11 +15,6 @@ and a daily publish to `ghcr.io/divbast/radarr`.
 The image follows Radarr's stable releases, the ones upstream does not
 mark as a pre-release on GitHub. Radarr's develop builds never reach it.
 
-**No image is published yet.** Until the first one reaches
-`ghcr.io/divbast/radarr`, the publish job rehearses, as the template's
-does, and fails by design, since divbast/ci lets only the template
-rehearse. Build the image yourself, as [Running](#running) says.
-
 ## Base
 
 The image is a Radarr stable release, built from source: the version and
@@ -68,8 +63,8 @@ of the same major and minor can build it; that file does not ship.
 
 ## Running
 
-Once the first image is published, pull `ghcr.io/divbast/radarr:latest`,
-which follows Radarr's stable releases; a version tag, `:<version>` with the Radarr release in place of
+Pull `ghcr.io/divbast/radarr:latest`, which follows Radarr's stable
+releases; a version tag, `:<version>` with the Radarr release in place of
 `<version>`, pins one. The package page on ghcr.io lists the tags. To
 build it yourself: `docker login dhi.io`, since every image the build
 starts from is Docker Hardened, then `just setup`, then
@@ -410,10 +405,8 @@ A merge never publishes. The daily slot publishes `main` when `main` moved
 since the commit the published `:latest` was built from, and the button, a
 manual run of `build` from `main`, publishes at once.
 
-Until the first publish, the publish job calls divbast/ci's
-`app-publish.yml` with the template's `image` and `rehearse: true`, which
-divbast/ci refuses outside the template, so it fails by design. Once
-switched, it calls it with `image: ghcr.io/divbast/radarr`. A publish pushes an index of the amd64 and arm64
+Its publish job calls divbast/ci's `app-publish.yml` with `image:
+ghcr.io/divbast/radarr`. A publish pushes an index of the amd64 and arm64
 images, attests it, verifies the attestation, and only then tags it twice:
 with Radarr's version, the Containerfile's `RADARR_VERSION`, and with
 `latest`. It ends by checking, as an anonymous client, that both tags are
