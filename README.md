@@ -386,8 +386,9 @@ the same purpose, at one pinned release of it:
   slot and the button, on `main`, it then calls `app-publish.yml`.
 - `renovate.yml` runs Renovate, as below.
 - `stall.yml` fails, and GitHub emails you, when a Renovate pull request
-  has been open more than 14 days or red or pending for more than a day, or
-  when Renovate has not succeeded in a day.
+  has been open more than 14 days or red or pending for more than a day,
+  when Renovate has not succeeded in a day, or when a daily slot that
+  should have published did not.
 
 The acceptance suite, on top of the contract, checks that Radarr serves
 `/ping`, its UI and its login page, refuses the API without a key, stops
