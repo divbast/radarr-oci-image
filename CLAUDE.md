@@ -11,10 +11,8 @@ made from oci-image-template with the template's .NET layer, and
 its Servarr parts follow prowlarr-oci-image's. The divbast organisation's
 settings, rulesets and Renovate wiring live in `divbast/infra`.
 
-It publishes nothing to ghcr.io yet: its publish job rehearses, until the
-image is ready to be published as `ghcr.io/divbast/radarr`, tagged with
-Radarr's version and `latest`, from `build.yml`'s daily slot and its
-manual run on `main`.
+It publishes to `ghcr.io/divbast/radarr`, tagged with Radarr's version
+and `latest`, from `build.yml`'s daily slot and its manual run on `main`.
 
 What makes the image this app's lives here: the Containerfile, the health
 probe (`cmd/divbast-radarr`, `internal/probe`), the backend stage's two
@@ -186,13 +184,12 @@ breaking change.
   `.github/workflows/stall.yml`, through divbast/ci's `stall.yml`, fails
   each day that updates have stopped flowing: a Renovate PR stuck, or
   Renovate silent
-- **The publish job rehearses, for now.** `build.yml` calls
-  `app-publish.yml` with the template's `image` and `rehearse: true`,
-  which divbast/ci permits only in the template, so each daily slot's
-  publish job fails by design until the publish switch, the template
-  README's step 8: `image: ghcr.io/divbast/radarr`, no `rehearse`, a first
-  publish by the button, then `stall.yml`'s slots check. `stall.yml` leaves
-  slots out until the first image is public
+- **The publish job publishes for real.** `build.yml` calls
+  `app-publish.yml` with `image: ghcr.io/divbast/radarr` and no
+  `rehearse`, an input divbast/ci permits only in the template. It tags the
+  attested index with `RADARR_VERSION` and `latest`. `stall.yml` turns its
+  slots check on once the first image is public: it then counts the daily
+  slots that should have published and did not
 - **Every image the Containerfile builds from is verified first.** Before
   `app-check.yml` builds anything, `divbast-verify-images` refuses any image
   not pinned as `<name>:<tag>@sha256:<digest>`, and verifies Docker's
