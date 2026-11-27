@@ -147,11 +147,16 @@ restore the backup under System, Backup. For a restore, size `/tmp` from
 the old `radarr.db` first, as [`/tmp`](#tmp) says: the upload and the
 database it holds pass through `/tmp`.
 
-- **After a restore, restart the container.** Radarr applies a restore by
-  restarting inside the same process, and it then serves again, but that
-  restart can keep reading the database it replaced. A restart of the
-  container (`podman restart radarr`, or `docker restart`) opens the
-  restored database for certain.
+- **After a restore, restart the container**, before you change
+  anything, whether it is still running or has stopped. Radarr applies a
+  restore by restarting inside the same process, and it then serves
+  again, but that restart can keep reading, and writing, the database it
+  replaced: the restore looks undone, and whatever you change before a
+  full restart is lost. Should the restore fail partway, Radarr stops
+  instead, exit status 3, with `Failed to restore database` in its log,
+  the restore not yet applied. A restart of the container (`podman
+  restart radarr`, or `docker restart`) applies the restore whatever was
+  left open.
 - This image serves on 8080, not Radarr's usual 7878, and its
   `RADARR__SERVER__PORT` wins over the old `config.xml`. Whatever reaches
   Radarr by its address, Prowlarr's Radarr application among them, needs
