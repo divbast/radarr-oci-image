@@ -41,7 +41,7 @@ permissions: {}
 jobs:
   renovate:
     name: renovate
-    uses: divbast/ci/.github/workflows/renovate.yml@82460d8340120206e7072268f9db52a240fc1be4 # v4.34.0
+    uses: divbast/ci/.github/workflows/renovate.yml@a5461fec6446275d207d1d8f9093eae47df2ef1e # v4.41.0
     with:
       automerge: ${{ vars.RADARR_AUTOMERGE == 'enabled' }}
       # The DHI login, without which dhi.io answers nothing: Renovate looks
