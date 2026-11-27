@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -196,13 +197,18 @@ func finished(ctx context.Context, s *harness.Serving, id int) (command, error) 
 // downloaded, the tag deleted, and the backup uploaded to
 // /api/v3/system/backup/restore/upload, which Radarr stages in /tmp and
 // applies once it restarts. Restarted as the UI then restarts it, in the
-// one process, Radarr must serve again, having put the restored database
-// in place. Radarr clears SQLite's connection pool after a backup, and
-// once its last host has stopped, but never between the hosts of an
-// in-process restart, so the new host can go on reading the database it
-// replaced, through a connection the old one left open. A restart of the
-// container, which the README tells users to make after a restore, opens
-// the restored file whatever the pool held, and the tag must be back then.
+// one process, Radarr must say it is restoring the database. Radarr
+// clears SQLite's connection pool after a backup, and once its last host
+// has stopped, but never between the hosts of an in-process restart, so a
+// connection the old host left open races the restore: still open, it
+// hands the new host the database the restore replaced, and the tag stays
+// gone; closing, it deletes radarr.db-wal as the restore deletes it too,
+// and a restore that fails partway makes Radarr exit 3. Which way it went
+// is logged, never checked. The restore stays staged until it is applied,
+// so a restart of the container, which the README tells users to make
+// after a restore, applies it whatever the pool held, from a container
+// still running or one that has stopped. Radarr must then serve again,
+// with the tag back.
 func TestRestoresBackup(t *testing.T) {
 	t.Parallel()
 	e, image := underTest(t)
@@ -250,21 +256,58 @@ func TestRestoresBackup(t *testing.T) {
 
 	resp, err = api(ctx, s, http.MethodPost, "/api/v3/system/restart", nil)
 	harness.Answers(t, "POST /api/v3/system/restart answers 200", http.StatusOK, resp, err)
-	err = servesAgain(ctx, s)
-	checks.True("Radarr restarts and /ping answers 200 again within "+restartWithin.String(), err == nil, errText(err))
-	harness.LogContains(t, s.C, "Radarr says it puts the restored database in place", restoringDatabase)
+	err = logged(ctx, s.C, restoringDatabase, restartWithin)
+	checks.True("Radarr says it is restoring the database within "+restartWithin.String(), err == nil, errText(err))
 
-	if err := s.Restart(ctx); err != nil {
-		t.Fatalf("restarting the container after the restore: %v", err)
+	// Upstream's race: its in-process restart keeps the SQLite connection
+	// pool the old host left, so by now Radarr may have exited 3 partway
+	// through the restore, or be serving the database it replaced. The
+	// container restarts whatever state it is in, as a restart policy
+	// would restart one that stopped, and as the README tells users to
+	noteOutcome(t, s.C)
+	if err = s.Restart(ctx); err != nil {
+		t.Fatalf("restarting the container after the restore began: %v", err)
 	}
+	err = servesAgain(ctx, s)
+	checks.True("after a restart of the container, /ping answers 200 within "+restartWithin.String(), err == nil, errText(err))
 	if got := labels(t, s, "after the restore and a restart of the container"); got != nil {
 		checks.True("after the restore and a restart of the container, the tag is back", slices.Contains(got, "restored"), fmt.Sprintf("tags: %q", got))
 	}
 }
 
-// restoringDatabase is what Radarr logs as the host a restart builds puts
-// the restored database in place of the old one.
+// restoringDatabase is what Radarr logs as the host a restart builds
+// begins to put the restored database in place of the old one.
 const restoringDatabase = "DatabaseRestorationService: Restoring Database"
+
+// restoreFailed is what Radarr logs when the restore fails partway, a
+// second before it exits 3.
+const restoreFailed = "DatabaseRestorationService: Failed to restore database"
+
+// noteOutcome logs, for the record and never as a check, how the
+// in-process restart has left c just before the test restarts it: its
+// state, with its exit status once it has stopped, and whether its log
+// says the restore failed. CI's history then shows how often each way of
+// upstream's race happens, and when upstream's fix ends it. Radarr exits
+// a second after it logs the failure, so a container on its way out can
+// still be running here: the log line is what says the restore failed.
+func noteOutcome(t *testing.T, c *harness.Container) {
+	t.Helper()
+	ctx := t.Context()
+	var state string
+	switch ins, err := c.Inspect(ctx); {
+	case err != nil:
+		state = "of a state the engine did not give: " + err.Error()
+	case ins.State.Running:
+		state = ins.State.Status
+	default:
+		state = fmt.Sprintf("%s, exit status %d", ins.State.Status, ins.State.ExitCode)
+	}
+	failed := "its log could not be read"
+	if logs, err := c.Logs(ctx); err == nil {
+		failed = strconv.FormatBool(strings.Contains(logs, restoreFailed))
+	}
+	t.Logf("before the restart of the container, the in-process restart left it %s; %q logged: %s", state, restoreFailed, failed)
+}
 
 // backupNow has s back itself up, as a Backup command through the API,
 // and returns the backup's bytes as the UI downloads them, or false,

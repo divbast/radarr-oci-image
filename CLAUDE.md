@@ -138,6 +138,30 @@ breaking change.
   bytes, fitted 1 MiB and failed on 512 KiB), and `TestBackupFitsTmpfs`
   and `TestRestoresBackup` hold it; the README tells users how to size
   theirs
+- **A restore needs a restart of the container.** The restore's upload
+  stages the database as `/config/radarr.restore`, and Radarr's in-process
+  restart puts it in place (`Restoring Database`), but upstream clears
+  SQLite's connection pool only after a backup (`MakeDatabaseBackup`) and
+  once its last host has stopped (`Bootstrap.Start`), never between
+  in-process restarts, so a connection the old host left open races the
+  restore. Still open, it hands the new host the replaced `radarr.db`, and
+  the old data. Closing, it deletes `radarr.db-wal`, which the restore
+  deletes too: the restore's deletes allow for a file already gone, but
+  not for one that goes between their check for it and their read of its
+  attributes, and a restore that fails logs `Failed to restore database`
+  and exits 3, the restore still staged (measured, with `radarr.db-wal` a
+  directory the restore cannot delete). Sonarr's restore, which moves
+  each file aside after its own check, met that exit on GitHub's runners,
+  and Sonarr's and Lidarr's met the old data. Radarr's CI has never
+  failed this test; from its first version the test restarted the
+  container before it looked for the tag, so the old data could not show
+  there, though an exit would have. `TestRestoresBackup` therefore
+  restarts the container once Radarr logs that it is restoring, whether
+  the container still runs or has stopped, logging which way the
+  in-process restart went, before it looks for the restored tag, and the
+  README tells users to do the same, before changing anything.
+  Upstream's own fix would be a `ClearAllPools` in its restart loop; this
+  image does not patch it
 - **No egress is needed, and some happens.** The contract suite proves the
   image serves and is healthy on a genuinely `--internal` network. The
   acceptance suite points Radarr's own hosts at loopback and turns
